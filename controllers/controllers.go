@@ -74,18 +74,16 @@ func (c Controllers) Daftar(w http.ResponseWriter, r *http.Request) {
 		Email := r.FormValue("Email")
 		Password := r.FormValue("Password")
 		Jk := r.FormValue("Jk")
-		collection.Find(bson.M{"Username": Username, "Email": Email}).One(&data)
-		// if Username == data.Username {
-		// 	fmt.Println(data.Username)
-		// 	http.Error(w, "Username ini sudah terdaftar, harap membuat username yang unik", http.StatusForbidden)
-		// 	return
-		// }
-		if Username == data.Username && Email == data.Email {
+		collection.Find(bson.M{"Email": Email}).One(&data)
+		if Email == data.Email {
 			http.Error(w, "Email ini sudah terdaftar", http.StatusForbidden)
 			return
 		}
-		fmt.Println(Username)
-		fmt.Println(data.Username)
+		collection.Find(bson.M{"Username": Username}).One(&data)
+		if Username == data.Username {
+			http.Error(w, "Username ini sudah terdaftar", http.StatusForbidden)
+			return
+		}
 		bs, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.MinCost)
 		if err != nil {
 			http.Error(w, "Gak bisa generate password", http.StatusInternalServerError)
@@ -98,6 +96,8 @@ func (c Controllers) Daftar(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Gak bisa nyimpan data", http.StatusInternalServerError)
 			return
 		}
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 	c.tpl.ExecuteTemplate(w, "daftar.html", data)
 }
@@ -112,11 +112,10 @@ func (c Controllers) Login(w http.ResponseWriter, r *http.Request) {
 	collection := sessions.DB("kancio").C("user")
 	data := models.Users{}
 	if r.Method == http.MethodPost {
-		Username := r.FormValue("Username")
+		Email := r.FormValue("Email")
 		Password := r.FormValue("Password")
-		collection.Find(bson.M{"Username": Username}).One(&data)
+		collection.Find(bson.M{"Email": Email}).One(&data)
 		err := bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(Password))
-
 		if err != nil {
 			http.Error(w, "Username atau password salah", http.StatusForbidden)
 			return
@@ -178,10 +177,6 @@ func (c Controllers) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c Controllers) Logout(w http.ResponseWriter, req *http.Request) {
-	// if !session.AlreadyLoggedIn(w, req) {
-	// 	http.Redirect(w, req, "/home", http.StatusSeeOther)
-	// 	return
-	// }
 	ck, _ := req.Cookie("session")
 	fmt.Println(ck)
 	// delete the session

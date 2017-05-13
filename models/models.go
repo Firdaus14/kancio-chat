@@ -19,3 +19,10 @@ type Session struct {
 	Username     string
 	LastActivity time.Time
 }
+
+type Chat struct {
+	Pengirim string `bson:"Pengirim"`
+	Pesan []byte `bson:"Pesan"`
+	Penerima string `bson:"Penerima"`
+	Waktu time.Time `bson:"Tanggal"`
+}
